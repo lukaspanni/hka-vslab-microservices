@@ -1,21 +1,19 @@
 package de.hkamicroservices.categoryservice;
 
 import javax.persistence.*;
-import java.util.Set;
 
 
 /**
  * This class contains details about categories.
  */
 @Entity
-@Table(name = "category")
 public class Category implements java.io.Serializable {
 
     /**
      *
      */
     private static final long serialVersionUID = 1L;
-    private int id;
+    private Long id;
     private String name;
 
     public Category() {
@@ -28,11 +26,11 @@ public class Category implements java.io.Serializable {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id", nullable = false)
-    public int getId() {
+    public Long getId() {
         return this.id;
     }
 
-    public void setId(int id) {
+    public void setId(Long id) {
         this.id = id;
     }
 
