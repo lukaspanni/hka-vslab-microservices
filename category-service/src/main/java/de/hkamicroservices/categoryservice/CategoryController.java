@@ -2,7 +2,10 @@ package de.hkamicroservices.categoryservice;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
+
 
 @RestController()
 @RequestMapping(path="/categories")
@@ -27,8 +30,10 @@ public class CategoryController {
 
     @PostMapping(path="/", consumes = "application/json", produces = "application/json")
     @ResponseStatus(HttpStatus.CREATED)
-    public Category addCategory(@RequestBody Category category){
-        return categoryRepository.save(category);
+    public ResponseEntity<?> addCategory(@RequestBody Category category){
+        var createdCategory =  categoryRepository.save(category);
+        var location = ServletUriComponentsBuilder.fromCurrentRequest().path("/{id}").buildAndExpand(createdCategory.getId()).toUri();
+        return ResponseEntity.created(location).body(createdCategory);
     }
 
     @DeleteMapping(path="/{id}", consumes = "application/json")
