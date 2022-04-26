@@ -26,8 +26,10 @@ public class ProductController {
     }
 
     @GetMapping(path = "/")
-    public Iterable<Product> getAllProducts() {
-        return productRepository.findAll();
+    public Iterable<Product> getAllProducts(@RequestParam(required = false) Integer categoryId) {
+        if(categoryId == null)
+            return productRepository.findAll();
+        return productRepository.getProductsByCategoryId(categoryId);
     }
 
     @GetMapping(path = "/{id}", produces = "application/json")
