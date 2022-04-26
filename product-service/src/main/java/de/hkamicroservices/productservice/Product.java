@@ -24,22 +24,22 @@ public class Product {
     @Column(name = "details")
     private String details;
 
-    @ManyToOne
-    @JoinColumn(name = "category_id")
-    private int category;
+    @Column(name = "categoryId")
+    private int categoryId;
 
-    public Product() {}
-
-    public Product(String name, double price, int category) {
-        this.name = name;
-        this.price = price;
-        this.category = category;
+    public Product() {
     }
 
-    public Product(String name, double price, int category, String details) {
+    public Product(String name, double price, int categoryId) {
         this.name = name;
         this.price = price;
-        this.category = category;
+        this.categoryId = categoryId;
+    }
+
+    public Product(String name, double price, int categoryId, String details) {
+        this.name = name;
+        this.price = price;
+        this.categoryId = categoryId;
         this.details = details;
     }
 
@@ -67,12 +67,12 @@ public class Product {
         this.price = price;
     }
 
-    public int getCategory() {
-        return this.category;
+    public int getCategoryId() {
+        return this.categoryId;
     }
 
-    public void setCategory(int category) {
-        this.category = category;
+    public void setCategoryId(int categoryId) {
+        this.categoryId = categoryId;
     }
 
     public String getDetails() {
