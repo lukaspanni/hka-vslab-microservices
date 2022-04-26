@@ -11,6 +11,10 @@ import org.springframework.web.reactive.function.client.WebClientResponseExcepti
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
 import java.util.Objects;
+import java.util.function.Function;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
+import java.util.stream.StreamSupport;
 
 
 @RestController()
@@ -26,44 +30,54 @@ public class ProductController {
     }
 
     @GetMapping(path = "/")
-    public Iterable<Product> getAllProducts(@RequestParam(required = false) Integer categoryId) {
-        if(categoryId == null)
-            return productRepository.findAll();
-        return productRepository.getProductsByCategoryId(categoryId);
+    public Iterable<Product> getAllProducts(@RequestParam(required = false) Integer categoryId, @RequestParam(required = false) Boolean full) {
+        Iterable<Product> products;
+        if (categoryId == null)
+            products = productRepository.findAll();
+        products = productRepository.getProductsByCategoryId(categoryId);
+        if (full == null || !full) return products;
+        return StreamSupport.stream(products.spliterator(), false)
+                .map(this::mapToFullProduct)
+                .collect(Collectors.toList());
     }
 
     @GetMapping(path = "/{id}", produces = "application/json")
-    public Product getProduct(@PathVariable Long id) {
-        return productRepository.findById(id).orElseThrow(ProductNotFoundException::new);
+    public Product getProduct(@PathVariable Long id, @RequestParam(required = false) Boolean full) {
+        var product = productRepository.findById(id).orElseThrow(ProductNotFoundException::new);
+        if (full == null || !full) return product;
+        return mapToFullProduct(product);
     }
+
 
     @PostMapping(path = "/", consumes = {"application/json"}, produces = {"application/json"})
     @ResponseStatus(HttpStatus.CREATED)
     public ResponseEntity<?> addProduct(@RequestBody Product product) {
-        if (product.getCategoryId() != 0 && !checkCategoryExists(product.getCategoryId()))
+        if (product.getCategoryId() != 0 && getCategory(product.getCategoryId()) == null)
             return ResponseEntity.badRequest().body("Category does not exist");
-
 
         var createdProduct = productRepository.save(product);
         var location = ServletUriComponentsBuilder.fromCurrentRequest().path("/{id}").buildAndExpand(createdProduct.getId()).toUri();
         return ResponseEntity.created(location).body(createdProduct);
     }
 
-    private boolean checkCategoryExists(int categoryId) {
-        WebClient client = WebClient.create("http://" + categoryServiceEndpoint + ":8080/categories/");
-        try {
-            client.get().uri(String.valueOf(categoryId)).retrieve().bodyToMono(CategoryDto.class).block();
-        } catch (WebClientResponseException wcre) {
-            if (wcre.getStatusCode().equals(HttpStatus.NOT_FOUND))
-                return false;
-            throw wcre;
-        }
-        return true;
-    }
-
     @DeleteMapping(path = "/{id}")
     public void deleteProduct(@PathVariable Long id) {
         if (!productRepository.existsById(id)) throw new ProductNotFoundException();
         productRepository.deleteById(id);
+    }
+
+    private CategoryDto getCategory(int cateogryId) {
+        var client = WebClient.create("http://" + categoryServiceEndpoint + ":8080/categories/");
+        try {
+            return client.get().uri(String.valueOf(cateogryId)).retrieve().bodyToMono(CategoryDto.class).block();
+        } catch (WebClientResponseException wcre) {
+            if (wcre.getStatusCode().equals(HttpStatus.NOT_FOUND))
+                return null;
+            throw wcre;
+        }
+    }
+
+    private FullProduct mapToFullProduct(Product product) {
+        return new FullProduct(product, getCategory(product.getCategoryId()));
     }
 }
