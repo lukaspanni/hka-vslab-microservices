@@ -36,7 +36,7 @@ public class CategoryController {
         return ResponseEntity.created(location).body(createdCategory);
     }
 
-    @DeleteMapping(path="/{id}", consumes = "application/json")
+    @DeleteMapping(path="/{id}")
     public void deleteCategory(@PathVariable Long id){
         if(!categoryRepository.existsById(id)) throw new CategoryNotFoundException();
         categoryRepository.deleteById(id);

@@ -8,37 +8,37 @@ import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
 
 @RestController()
-@RequestMapping(path="/categories")
+@RequestMapping(path = "/products")
 public class ProductController {
 
     private final ProductRepository productRepository;
 
     @Autowired
-    public ProductController(ProductRepository repository){
+    public ProductController(ProductRepository repository) {
         productRepository = repository;
     }
 
-    @GetMapping(path="/")
-    public Iterable<Product> getAllCategories(){
+    @GetMapping(path = "/")
+    public Iterable<Product> getAllProducts() {
         return productRepository.findAll();
     }
 
-    @GetMapping(path="/{id}", produces = "application/json")
-    public Product getProduct(@PathVariable Long id){
+    @GetMapping(path = "/{id}", produces = "application/json")
+    public Product getProduct(@PathVariable Long id) {
         return productRepository.findById(id).orElseThrow(ProductNotFoundException::new);
     }
 
-    @PostMapping(path="/", consumes = "application/json", produces = "application/json")
+    @PostMapping(path = "/", consumes = {"application/json"}, produces = {"application/json"})
     @ResponseStatus(HttpStatus.CREATED)
-    public ResponseEntity<?> addProduct(@RequestBody Product product){
-        var createdProduct =  productRepository.save(product);
+    public ResponseEntity<?> addProduct(@RequestBody Product product) {
+        var createdProduct = productRepository.save(product);
         var location = ServletUriComponentsBuilder.fromCurrentRequest().path("/{id}").buildAndExpand(createdProduct.getId()).toUri();
         return ResponseEntity.created(location).body(createdProduct);
     }
 
-    @DeleteMapping(path="/{id}", consumes = "application/json")
-    public void deleteProduct(@PathVariable Long id){
-        if(!productRepository.existsById(id)) throw new ProductNotFoundException();
+    @DeleteMapping(path = "/{id}")
+    public void deleteProduct(@PathVariable Long id) {
+        if (!productRepository.existsById(id)) throw new ProductNotFoundException();
         productRepository.deleteById(id);
     }
 }
