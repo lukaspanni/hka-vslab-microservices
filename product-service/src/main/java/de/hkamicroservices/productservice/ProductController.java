@@ -21,7 +21,7 @@ import java.util.stream.StreamSupport;
 @RequestMapping(path = "/products")
 public class ProductController {
 
-    private final String categoryServiceEndpoint = Objects.equals(System.getenv("CATEGORY_ENDPOINT"), "") ? System.getenv("CATEGORY_ENDPOINT") : "localhost";
+    private final String categoryServiceEndpoint = !Objects.equals(System.getenv("CATEGORY_ENDPOINT"), "") ? System.getenv("CATEGORY_ENDPOINT") : "localhost";
     private final ProductRepository productRepository;
 
     @Autowired
@@ -30,15 +30,19 @@ public class ProductController {
     }
 
     @GetMapping(path = "/")
-    public Iterable<Product> getAllProducts(@RequestParam(required = false) Integer categoryId, @RequestParam(required = false) Boolean full) {
-        Iterable<Product> products;
-        if (categoryId == null)
-            products = productRepository.findAll();
-        else products = productRepository.getProductsByCategoryId(categoryId);
-        if (full == null || !full) return products;
-        return StreamSupport.stream(products.spliterator(), false)
-                .map(this::mapToFullProduct)
-                .collect(Collectors.toList());
+    public Iterable<Product> getAllProducts(@RequestParam(required = false) Integer categoryId,
+                                            @RequestParam(required = false) String search,
+                                            @RequestParam(required = false, defaultValue = "0.0") Double minPrice,
+                                            @RequestParam(required = false) Double maxPrice) {
+        if (categoryId != null)
+            return productRepository.getProductsByCategoryId(categoryId);
+
+        if (search != null) {
+            if (maxPrice == null) maxPrice = Double.MAX_VALUE;
+            if (minPrice == null) minPrice = 0.0;
+            return productRepository.getProductsBySearchCriteria("%" + search + "%", minPrice, maxPrice);
+        }
+        return productRepository.findAll();
     }
 
     @GetMapping(path = "/{id}", produces = "application/json")

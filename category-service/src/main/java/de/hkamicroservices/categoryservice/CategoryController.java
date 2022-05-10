@@ -16,7 +16,7 @@ import java.util.Objects;
 @RequestMapping(path="/categories")
 public class CategoryController {
 
-    private final String productServiceEndpoint = Objects.equals(System.getenv("PRODUCT_ENDPOINT"), "") ? System.getenv("PRODUCT_ENDPOINT") : "localhost";
+    private final String productServiceEndpoint = !Objects.equals(System.getenv("PRODUCT_ENDPOINT"), "") ? System.getenv("PRODUCT_ENDPOINT") : "localhost";
     private final CategoryRepository categoryRepository;
 
     @Autowired
