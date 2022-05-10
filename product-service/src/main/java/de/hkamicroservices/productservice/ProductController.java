@@ -34,7 +34,7 @@ public class ProductController {
         Iterable<Product> products;
         if (categoryId == null)
             products = productRepository.findAll();
-        products = productRepository.getProductsByCategoryId(categoryId);
+        else products = productRepository.getProductsByCategoryId(categoryId);
         if (full == null || !full) return products;
         return StreamSupport.stream(products.spliterator(), false)
                 .map(this::mapToFullProduct)
