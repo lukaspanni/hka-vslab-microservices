@@ -8,6 +8,7 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.reactive.function.client.WebClient;
 import org.springframework.web.reactive.function.client.WebClientResponseException;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
+import javax.servlet.http.HttpServletResponse;
 
 import java.util.Objects;
 
@@ -25,25 +26,29 @@ public class CategoryController {
     }
 
     @GetMapping(path="/")
-    public Iterable<Category> getAllCategories(){
+    public Iterable<Category> getAllCategories(HttpServletResponse response){
+        response.setHeader("Pod", System.getenv("HOSTNAME"));
         return categoryRepository.findAll();
     }
 
     @GetMapping(path="/{id}", produces = "application/json")
-    public Category getCategory(@PathVariable Long id){
+    public Category getCategory(@PathVariable Long id, HttpServletResponse response){
+        response.setHeader("Pod", System.getenv("HOSTNAME"));
         return categoryRepository.findById(id).orElseThrow(CategoryNotFoundException::new);
     }
 
     @PostMapping(path="/", consumes = "application/json", produces = "application/json")
     @ResponseStatus(HttpStatus.CREATED)
-    public ResponseEntity<?> addCategory(@RequestBody Category category){
+    public ResponseEntity<?> addCategory(@RequestBody Category category, HttpServletResponse response){
+        response.setHeader("Pod", System.getenv("HOSTNAME"));
         var createdCategory =  categoryRepository.save(category);
         var location = ServletUriComponentsBuilder.fromCurrentRequest().path("/{id}").buildAndExpand(createdCategory.getId()).toUri();
         return ResponseEntity.created(location).body(createdCategory);
     }
 
     @DeleteMapping(path="/{id}")
-    public ResponseEntity<?> deleteCategory(@PathVariable Long id){
+    public ResponseEntity<?> deleteCategory(@PathVariable Long id, HttpServletResponse response){
+        response.setHeader("Pod", System.getenv("HOSTNAME"));
         if(!categoryRepository.existsById(id)) throw new CategoryNotFoundException();
         if(checkProductsExist(id)) return ResponseEntity.badRequest().body("Cannot delete category if products using this category exist");
 
