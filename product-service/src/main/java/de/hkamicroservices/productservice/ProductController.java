@@ -9,6 +9,7 @@ import org.springframework.web.reactive.function.client.WebClient;
 import org.springframework.web.reactive.function.client.WebClientException;
 import org.springframework.web.reactive.function.client.WebClientResponseException;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
+
 import javax.servlet.http.HttpServletResponse;
 
 
@@ -32,24 +33,30 @@ public class ProductController {
     }
 
     @GetMapping(path = "/")
-    public Iterable<Product> getAllProducts(@RequestParam(required = false) Integer categoryId,
+    public Iterable<Product> getAllProducts(@RequestParam(required = false) Boolean full,
+                                            @RequestParam(required = false) Integer categoryId,
                                             @RequestParam(required = false) String search,
                                             @RequestParam(required = false, defaultValue = "0.0") Double minPrice,
-                                            @RequestParam(required = false) Double maxPrice, HttpServletResponse response){
+                                            @RequestParam(required = false) Double maxPrice, HttpServletResponse response) {
         response.setHeader("Pod", System.getenv("HOSTNAME"));
         if (categoryId != null)
             return productRepository.getProductsByCategoryId(categoryId);
 
+        Iterable<Product> products;
         if (search != null) {
             if (maxPrice == null) maxPrice = Double.MAX_VALUE;
             if (minPrice == null) minPrice = 0.0;
-            return productRepository.getProductsBySearchCriteria("%" + search + "%", minPrice, maxPrice);
+            products = productRepository.getProductsBySearchCriteria("%" + search + "%", minPrice, maxPrice);
+        }else {
+            products = productRepository.findAll();
         }
-        return productRepository.findAll();
+        if(full == null || !full) return products;
+        return StreamSupport.stream(products.spliterator(), false).map(this::mapToFullProduct).collect(Collectors.toList());
+
     }
 
     @GetMapping(path = "/{id}", produces = "application/json")
-    public Product getProduct(@PathVariable Long id, @RequestParam(required = false) Boolean full, HttpServletResponse response){
+    public Product getProduct(@PathVariable Long id, @RequestParam(required = false) Boolean full, HttpServletResponse response) {
         response.setHeader("Pod", System.getenv("HOSTNAME"));
         var product = productRepository.findById(id).orElseThrow(ProductNotFoundException::new);
         if (full == null || !full) return product;
@@ -59,7 +66,7 @@ public class ProductController {
 
     @PostMapping(path = "/", consumes = {"application/json"}, produces = {"application/json"})
     @ResponseStatus(HttpStatus.CREATED)
-    public ResponseEntity<?> addProduct(@RequestBody Product product, HttpServletResponse response){
+    public ResponseEntity<?> addProduct(@RequestBody Product product, HttpServletResponse response) {
         response.setHeader("Pod", System.getenv("HOSTNAME"));
         if (product.getCategoryId() != 0 && getCategory(product.getCategoryId()) == null)
             return ResponseEntity.badRequest().body("Category does not exist");
@@ -70,7 +77,7 @@ public class ProductController {
     }
 
     @DeleteMapping(path = "/{id}")
-    public void deleteProduct(@PathVariable Long id, HttpServletResponse response){
+    public void deleteProduct(@PathVariable Long id, HttpServletResponse response) {
         response.setHeader("Pod", System.getenv("HOSTNAME"));
         if (!productRepository.existsById(id)) throw new ProductNotFoundException();
         productRepository.deleteById(id);
