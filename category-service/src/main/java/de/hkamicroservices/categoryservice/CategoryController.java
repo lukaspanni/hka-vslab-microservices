@@ -57,12 +57,11 @@ public class CategoryController {
     }
 
     private boolean checkProductsExist(Long categoryId){
-        WebClient client = WebClient.create("http://" + productServiceEndpoint + ":8081/products/");
+        WebClient client = WebClient.create("http://" + productServiceEndpoint + ":8080/products/");
         try {
             var response = client.get().uri("?categoryId="+String.valueOf(categoryId)).accept(MediaType.APPLICATION_JSON).retrieve().bodyToMono(ProductDto[].class).block();
             assert response != null;
             return response.length >0;
-            //return response.length > 0;
         } catch (WebClientResponseException wcre) {
             return false;
         }catch (Exception e){
